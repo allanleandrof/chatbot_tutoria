@@ -89,7 +89,11 @@ def main():
     
     try:
         tutor = chatbotTutor()
-        tutor.tutoring_session("Solucionar equações lineares", "intermediário")
+
+        concept = input("Digite o assunto que deseja estudar: ")
+        difficulty = input("Digite a dificuldade que deseja: ")
+
+        tutor.tutoring_session(concept, difficulty)
     except Exception as e:
         print(f"\nErro: {str(e)}")
 
