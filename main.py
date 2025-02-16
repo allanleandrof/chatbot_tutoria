@@ -1,7 +1,5 @@
 import requests
 import json
-import time
-from typing import Dict, List, Optional
 
 class chatbotTutor:
     def __init__(self, stream = True):
@@ -9,6 +7,7 @@ class chatbotTutor:
         self.url = "http://localhost:11434/api/generate"
         self.model = "llama2"
         self.stream = stream
+        self.language = "português do Brasil"
     
     def _generate_response(self, prompt: str) -> str:
         """
@@ -50,28 +49,28 @@ class chatbotTutor:
         """
         Explica um conceito algébrico adaptado ao nível do aluno
         """
-        prompt = f"Explique o conceito de {concept} para um estudante de nível {level}. Dê a sua resposta em português do Brasil."
+        prompt = f"Explique o conceito de {concept} para um estudante de nível {level}. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def generate_problem(self, concept: str, difficulty: str) -> str:
         """
         Gera um problema prático para o aluno
         """
-        prompt = f"Gere um problema {difficulty} sobre {concept} para um estudante praticar."
+        prompt = f"Gere um problema {difficulty} sobre {concept} para um estudante praticar. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def solve_problem(self, problem: str) -> str:
         """
         Resolve o problema passo a passo
         """
-        prompt = f"Resolva o seguinte problema, mostrando uma explicação passo a passo: {problem}"
+        prompt = f"Resolva o seguinte problema, mostrando uma explicação passo a passo: {problem}. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def adjust_explanation(self, student_answer: str, correct_answer: str) -> str:
         """
         Avalia a resposta do aluno e fornece feedback
         """
-        prompt = f"A resposta do estudante foi: {student_answer}. A resposta correta é: {correct_answer}.\nRetorne um feedback sobre a resposta do estudante com uma explicação adicional caso seja necessário."
+        prompt = f"A resposta do estudante foi: {student_answer}. A resposta correta é: {correct_answer}.\nRetorne um feedback sobre a resposta do estudante com uma explicação adicional caso seja necessário. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def tutoring_session(self, concept: str, difficulty: str = "fácil"):
@@ -87,20 +86,23 @@ class chatbotTutor:
         # Gerar um problema para prática
         print("\nProblema para prática:")
         problem = self.generate_problem(concept, difficulty)
-        print(problem)
+        if not self.stream:
+            print(problem)
         
-        #Step 3: Receber a resposta do estudante
+        # Receber a resposta do estudante
         student_answer = input("\nSua resposta: ")
         
         # Prover solução correta
         print("\nSolução correta:")
         correct_solution = self.solve_problem(problem)
-        print(correct_solution)
+        if not self.stream:
+            print(correct_solution)
         
         # Ajustar explicação baseada na resposta do estudante
         print("\nFeedback:")
         feedback = self.adjust_explanation(student_answer, correct_solution)
-        print(feedback)
+        if not self.stream:
+            print(feedback)
 
 def main():
     print("Iniciando o Tutor de Álgebra...")
