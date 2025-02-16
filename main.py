@@ -4,10 +4,11 @@ import time
 from typing import Dict, List, Optional
 
 class chatbotTutor:
-    def __init__(self):
-        """Inicializa o tutor usando Llama 2 via Ollama"""
+    def __init__(self, stream = True):
+        """Inicializa o tutor usando Ollama no servidor local"""
         self.url = "http://localhost:11434/api/generate"
         self.model = "llama2"
+        self.stream = stream
     
     def _generate_response(self, prompt: str) -> str:
         """
@@ -16,16 +17,32 @@ class chatbotTutor:
         data = {
             "model": self.model,
             "prompt": prompt,
-            "stream": False,
             "temperature": 0.5,
             "top_p": 0.65,
             "max_tokens": 200
         }
         
         try:
-            response = requests.post(self.url, json=data)
-            response.raise_for_status()
-            return response.json()['response']
+            if not self.stream:
+                response = requests.post(self.url, json=data, stream=self.stream)
+                response.raise_for_status()
+                return response.json()['response']
+            else:
+                
+                response = requests.post(self.url, json=data, stream=True)  # Stream ativado
+                response.raise_for_status()
+
+                full_response = ""
+                for chunk in response.iter_lines():
+                    if chunk:
+                        decoded_chunk = json.loads(chunk.decode("utf-8"))  # Decodificando JSON
+                        text = decoded_chunk.get("response", "")
+                        print(text, end="", flush=True)  # Exibe no terminal sem quebrar linha
+                        full_response += text
+
+                print("\n")  # Adiciona quebra de linha após resposta completa
+                return full_response
+
         except requests.exceptions.RequestException as e:
             return f"Erro na requisição: {str(e)}"
 
@@ -33,7 +50,7 @@ class chatbotTutor:
         """
         Explica um conceito algébrico adaptado ao nível do aluno
         """
-        prompt = f"Explique o conceito de {concept} para um estudante de nível {level}."
+        prompt = f"Explique o conceito de {concept} para um estudante de nível {level}. Dê a sua resposta em português do Brasil."
         return self._generate_response(prompt)
 
     def generate_problem(self, concept: str, difficulty: str) -> str:
@@ -64,7 +81,8 @@ class chatbotTutor:
         #Explique o conceito
         print("Explicação:")
         explanation = self.explain_concept(concept, difficulty)
-        print(explanation)
+        if not self.stream:
+            print(explanation)
         
         # Gerar um problema para prática
         print("\nProblema para prática:")
