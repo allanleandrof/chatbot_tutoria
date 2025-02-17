@@ -77,32 +77,73 @@ class chatbotTutor:
         """
         Executa uma sessão interativa de tutoria
         """
-        #Explique o conceito
-        print("Explicação:")
-        explanation = self.explain_concept(concept, difficulty)
-        if not self.stream:
-            print(explanation)
-        
-        # Gerar um problema para prática
-        print("\nProblema para prática:")
-        problem = self.generate_problem(concept, difficulty)
-        if not self.stream:
-            print(problem)
-        
-        # Receber a resposta do estudante
-        student_answer = input("\nSua resposta: ")
-        
-        # Prover solução correta
-        print("\nSolução correta:")
-        correct_solution = self.solve_problem(problem)
-        if not self.stream:
-            print(correct_solution)
-        
-        # Ajustar explicação baseada na resposta do estudante
-        print("\nFeedback:")
-        feedback = self.adjust_explanation(student_answer, correct_solution)
-        if not self.stream:
-            print(feedback)
+        print("Opções\n")
+        print("1 - Ver explicação.\n")
+        print("2 - Resolver problema.\n")
+        print("3 - Ver explicação e resolver problema.\n")
+
+        conversation = input("Escolha uma das opções: ")
+
+        if conversation == '1':
+            #Explique o conceito
+            print("Explicação:")
+            explanation = self.explain_concept(concept, difficulty)
+            if not self.stream:
+                print(explanation)
+
+        elif conversation == '2':
+            # Gerar um problema para prática
+            print("\nProblema para prática:")
+            problem = self.generate_problem(concept, difficulty)
+            if not self.stream:
+                print(problem)
+            
+            # Receber a resposta do estudante
+            student_answer = input("\nSua resposta: ")
+            
+            # Prover solução correta
+            print("\nSolução correta:")
+            correct_solution = self.solve_problem(problem)
+            if not self.stream:
+                print(correct_solution)
+            
+            # Ajustar explicação baseada na resposta do estudante
+            print("\nFeedback:")
+            feedback = self.adjust_explanation(student_answer, correct_solution)
+            if not self.stream:
+                print(feedback)
+
+        elif conversation == '3':
+            #Explique o conceito
+            print("Explicação:")
+            explanation = self.explain_concept(concept, difficulty)
+            if not self.stream:
+                print(explanation)
+
+            # Gerar um problema para prática
+            print("\nProblema para prática:")
+            problem = self.generate_problem(concept, difficulty)
+            if not self.stream:
+                print(problem)
+            
+            # Receber a resposta do estudante
+            student_answer = input("\nSua resposta: ")
+            
+            # Prover solução correta
+            print("\nSolução correta:")
+            correct_solution = self.solve_problem(problem)
+            if not self.stream:
+                print(correct_solution)
+            
+            # Ajustar explicação baseada na resposta do estudante
+            print("\nFeedback:")
+            feedback = self.adjust_explanation(student_answer, correct_solution)
+            if not self.stream:
+                print(feedback)
+
+        else:
+            print("Comando desconhecido.")
+            
 
 def main():
     print("Iniciando o Tutor de Álgebra...")
@@ -110,10 +151,18 @@ def main():
     try:
         tutor = chatbotTutor()
 
-        concept = input("Digite o assunto que deseja estudar: ")
-        difficulty = input("Digite a dificuldade que deseja: ")
+        while True:
+            concept = input("Digite o assunto que deseja estudar: ")
+            difficulty = input("Digite a dificuldade que deseja: ")
 
-        tutor.tutoring_session(concept, difficulty)
+            tutor.tutoring_session(concept, difficulty)
+            flag = input("Deseja continuar estudando? digite 'Sim' ou 'Nao': ")
+
+            if flag == 'Nao':
+                print("Encerrando...")
+                break
+
+
     except Exception as e:
         print(f"\nErro: {str(e)}")
 
