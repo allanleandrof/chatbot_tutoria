@@ -1,62 +1,59 @@
 import requests
 import json
 
-class chatbotTutor:
-    def __init__(self, stream = True):
+class ChatbotTutor:
+    def __init__(self, stream=True):
         """Inicializa o tutor usando Ollama no servidor local"""
         self.url = "http://localhost:11434/api/generate"
-        self.model = "llama2"
+        self.model = "llama3"
         self.stream = stream
         self.language = "português do Brasil"
     
     def _generate_response(self, prompt: str) -> str:
         """
-        Faz a requisição para o Llama 2 através do Ollama
+        Faz a requisição para o Llama 3 através do Ollama
         """
         data = {
             "model": self.model,
-            "prompt": prompt,
+            "prompt": f"TUTOR: {prompt}",
             "temperature": 0.5,
             "top_p": 0.65,
             "max_tokens": 200
         }
         
         try:
+            response = requests.post(self.url, json=data, stream=self.stream)
+            response.raise_for_status()
+            
             if not self.stream:
-                response = requests.post(self.url, json=data, stream=self.stream)
-                response.raise_for_status()
-                return response.json()['response']
-            else:
-                
-                response = requests.post(self.url, json=data, stream=True)  # Stream ativado
-                response.raise_for_status()
-
-                full_response = ""
-                for chunk in response.iter_lines():
-                    if chunk:
-                        decoded_chunk = json.loads(chunk.decode("utf-8"))  # Decodificando JSON
-                        text = decoded_chunk.get("response", "")
-                        print(text, end="", flush=True)  # Exibe no terminal sem quebrar linha
-                        full_response += text
-
-                print("\n")  # Adiciona quebra de linha após resposta completa
-                return full_response
-
+                return response.json().get('response', "Erro ao obter resposta")
+            
+            full_response = ""
+            for chunk in response.iter_lines():
+                if chunk:
+                    decoded_chunk = json.loads(chunk.decode("utf-8"))
+                    text = decoded_chunk.get("response", "")
+                    print(text, end="", flush=True)
+                    full_response += text
+            
+            print("\n")
+            return full_response
+        
         except requests.exceptions.RequestException as e:
-            return f"Erro na requisição: {str(e)}"
+            return f"TUTOR: Erro na requisição: {str(e)}"
 
-    def explain_concept(self, concept: str, level: str) -> str:
+    def explain_concept(self, concept: str, difficulty: str) -> str:
         """
-        Explica um conceito algébrico adaptado ao nível do aluno
+        Explica um conceito adaptado ao nível do aluno
         """
-        prompt = f"Explique o conceito de {concept} para um estudante de nível {level}. Dê a sua resposta em {self.language}."
+        prompt = f"Explique o conceito de {concept} para um estudante de nível {difficulty}. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def generate_problem(self, concept: str, difficulty: str) -> str:
         """
         Gera um problema prático para o aluno
         """
-        prompt = f"Gere um problema {difficulty} sobre {concept} para um estudante praticar. Dê a sua resposta em {self.language}."
+        prompt = f"Gere um problema {difficulty} sobre {concept} para um estudante praticar. Não forneça a resposta, apenas a questão. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
     def solve_problem(self, problem: str) -> str:
@@ -66,105 +63,75 @@ class chatbotTutor:
         prompt = f"Resolva o seguinte problema, mostrando uma explicação passo a passo: {problem}. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
-    def adjust_explanation(self, student_answer: str, correct_answer: str) -> str:
+    def adjust_explanation(self, student_answer: str) -> str:
         """
         Avalia a resposta do aluno e fornece feedback
         """
-        prompt = f"A resposta do estudante foi: {student_answer}. A resposta correta é: {correct_answer}.\nRetorne um feedback sobre a resposta do estudante com uma explicação adicional caso seja necessário. Dê a sua resposta em {self.language}."
+        prompt = f"A resposta do estudante foi: {student_answer}. Retorne um feedback sobre a resposta do estudante com uma explicação adicional caso seja necessário. Dê a sua resposta em {self.language}."
         return self._generate_response(prompt)
 
-    def tutoring_session(self, concept: str, difficulty: str = "fácil"):
+    def tutoring_session(self):
         """
-        Executa uma sessão interativa de tutoria
+        Executa uma sessão interativa de tutoria com fluxo flexível
         """
-        print("Opções\n")
-        print("1 - Ver explicação.\n")
-        print("2 - Resolver problema.\n")
-        print("3 - Ver explicação e resolver problema.\n")
-
-        conversation = input("Escolha uma das opções: ")
-
-        if conversation == '1':
-            #Explique o conceito
-            print("Explicação:")
-            explanation = self.explain_concept(concept, difficulty)
-            if not self.stream:
-                print(explanation)
-
-        elif conversation == '2':
-            # Gerar um problema para prática
-            print("\nProblema para prática:")
-            problem = self.generate_problem(concept, difficulty)
-            if not self.stream:
-                print(problem)
-            
-            # Receber a resposta do estudante
-            student_answer = input("\nSua resposta: ")
-            
-            # Prover solução correta
-            print("\nSolução correta:")
-            correct_solution = self.solve_problem(problem)
-            if not self.stream:
-                print(correct_solution)
-            
-            # Ajustar explicação baseada na resposta do estudante
-            print("\nFeedback:")
-            feedback = self.adjust_explanation(student_answer, correct_solution)
-            if not self.stream:
-                print(feedback)
-
-        elif conversation == '3':
-            #Explique o conceito
-            print("Explicação:")
-            explanation = self.explain_concept(concept, difficulty)
-            if not self.stream:
-                print(explanation)
-
-            # Gerar um problema para prática
-            print("\nProblema para prática:")
-            problem = self.generate_problem(concept, difficulty)
-            if not self.stream:
-                print(problem)
-            
-            # Receber a resposta do estudante
-            student_answer = input("\nSua resposta: ")
-            
-            # Prover solução correta
-            print("\nSolução correta:")
-            correct_solution = self.solve_problem(problem)
-            if not self.stream:
-                print(correct_solution)
-            
-            # Ajustar explicação baseada na resposta do estudante
-            print("\nFeedback:")
-            feedback = self.adjust_explanation(student_answer, correct_solution)
-            if not self.stream:
-                print(feedback)
-
-        else:
-            print("Comando desconhecido.")
-            
-
-def main():
-    print("Iniciando o Tutor de Álgebra...")
-    
-    try:
-        tutor = chatbotTutor()
+        concept = input("TUTOR: Qual assunto você deseja estudar? ")
+        difficulty = input("TUTOR: Qual a dificuldade desejada (fácil, médio, difícil)? ")
+        print(f"TUTOR: Vamos começar com uma breve explicação sobre {concept}.")
+        
+        explanation = self.explain_concept(concept, difficulty)
+        if not self.stream:
+            print(explanation)
 
         while True:
-            concept = input("Digite o assunto que deseja estudar: ")
-            difficulty = input("Digite a dificuldade que deseja: ")
-
-            tutor.tutoring_session(concept, difficulty)
-            flag = input("Deseja continuar estudando? digite 'Sim' ou 'Nao': ")
-
-            if flag == 'Nao':
-                print("Encerrando...")
+            user_input = input("TUTOR: O que deseja fazer agora? Você pode pedir um problema, fazer uma pergunta ou encerrar o programa, digitando 'sair'. Digite sua solicitação: ")
+            action = self._generate_response(
+                f"O aluno disse: '{user_input}'. Classifique esta entrada e responda exatamente no formato '--<classificacao>--', onde 'classificacao' pode ser problema, pergunta ou sair. Exemplo de resposta válida: '--problema--'. Logo, você tem 4 alternativas de respostas:\n'--problema--'\n'--pergunta--'\n'--sair--'\n'não entendi'"
+            ).strip().lower()
+            
+            if "--problema--" in action:
+                problem = self.generate_problem(concept, difficulty)
+                if not self.stream:
+                    print(problem)
+                
+                student_answer = input("TUTOR: Qual sua resposta para este problema? ")
+                feedback = self.adjust_explanation(student_answer)
+                if not self.stream:
+                    print(feedback)
+                
+                extra_explanation = input("TUTOR: Você gostaria de uma explicação mais detalhada sobre a solução? (Sim/Não) ")
+                if extra_explanation.lower() in ["sim", "s"]:
+                    self.solve_problem(problem)
+            
+            elif "--pergunta--" in action:
+                question = input("TUTOR: Qual sua dúvida? ")
+                answer = self._generate_response(f"Responda de forma clara e objetiva: {question}. Dê a sua resposta em {self.language}.")
+                if not self.stream:
+                    print(answer)
+            
+            elif "--sair--" in action:
+                print("TUTOR: Foi um prazer ensinar você! Até a próxima!")
                 break
+            
+            else:
+                print("TUTOR: Não entendi, pode reformular sua solicitação?")
 
 
+def main():
+    print("TUTOR: Olá! Sou seu tutor de álgebra. Podemos conversar sobre qualquer conceito que você quiser aprender. Basta perguntar!")
+    
+    try:
+        tutor = ChatbotTutor()
+        
+        while True:
+            tutor.tutoring_session()
+            
+            flag = input("TUTOR: Deseja continuar estudando? (Sim/Não): ")
+            if flag.lower() in ["não", "nao"]:
+                print("TUTOR: Até a próxima!")
+                break
+    
     except Exception as e:
-        print(f"\nErro: {str(e)}")
+        print(f"\nTUTOR: Erro: {str(e)}")
 
 if __name__ == "__main__":
     main()
